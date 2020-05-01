@@ -57,6 +57,7 @@ DEPENDENCIES
   foreman
   omniauth
   omniauth-github
+  rack-protection
   rack-ssl
   redis
   shotgun

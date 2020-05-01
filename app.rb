@@ -2,7 +2,7 @@ configure do
   # use a cookie that lasts for 1 minute
   secret = ENV['COOKIE_SECRET'] || SecureRandom.hex(20)
   use Rack::Session::Cookie, secret: secret, expire_after: 60
-
+  use Rack::Protection::AuthenticityToken
   use Rack::SSL if settings.production?
 
   REDIS = Redis.new(url: ENV['REDIS_URL'])
