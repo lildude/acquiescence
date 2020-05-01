@@ -1,3 +1,4 @@
+require "rack/csrf"
 configure do
   # use a cookie that lasts for 1 minute
   secret = ENV['COOKIE_SECRET'] || SecureRandom.hex(20)
