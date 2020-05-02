@@ -5,5 +5,6 @@ Bundler.require(:default, env)
 
 Dotenv.load unless env == :production
 
+require 'rack/csrf'
 require './app'
 run Sinatra::Application
