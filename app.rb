@@ -124,9 +124,8 @@ get '/auth/failure' do
 end
 
 post '/auth' do
-  me = get_auth(params[:code], params[:redirect_uri], params[:client_id])
-  data = {me: me}
-  logger.info data.to_s
+  auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
+  data = {me: auth['me']}
   render_data(data)
 end
 
