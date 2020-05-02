@@ -39,7 +39,6 @@
 
           <form action="/auth/github" method="post">
             <div>
-              <%= Rack::Csrf.csrf_tag(env) %>
               <button type="submit" class="btn btn-success">
                 Approve with GitHub
               </button>
