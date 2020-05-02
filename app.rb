@@ -126,6 +126,7 @@ end
 post '/auth' do
   me = get_auth(params[:code], params[:redirect_uri], params[:client_id])
   data = {me: me}
+  logger.info data.to_s
   render_data(data)
 end
 
