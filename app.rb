@@ -73,7 +73,8 @@ helpers do
 end
 
 get '/' do
-  "Authorization server"
+  #"Authorization server"
+  erb :sign
 end
 
 get '/auth' do

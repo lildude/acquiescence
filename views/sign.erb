@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <title>Acquiescence</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+      crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+
+          <h3>Acquiescence</h3>
+
+          <form action="/auth" method="get">
+            <table class="table">
+            <thead>
+              <tr>
+                <th>me</th>
+                <th><input type="text" value="https://gonefora.run" name="me"></th>
+              </tr>
+            </thead>
+            <tr>
+              <th>client_id</th>
+              <td><input type="text" value="http://localhost:9292" name="client_id"></td>
+            </tr>
+            <tr>
+              <th>state</th>
+              <td><input type="text" value="fd615ab3397a39447f49bc81" name="state"></td>
+            </tr>
+            <tr>
+              <th>redirect_uri</th>
+              <td><input type="text" value="http://localhost:9292/debug" name="redirect_uri"></td>
+            </tr>
+            <tr>
+              <th>scope(s)</th>
+              <td><input type="text" value="write" name="scope"></td>
+            </tr>
+          </table>
+            <div>
+              <input type="hidden" value="id" name="response_type"><br>
+              <button type="submit" class="btn btn-success">
+                Sign In
+              </button>
+            </div>
+          </form>
+                    <hr />
+          <pre>
+          <%= params.to_json %>
+          </pre>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
