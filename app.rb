@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 configure do
   # use a cookie that lasts for 1 minute
   secret = ENV['COOKIE_SECRET'] || SecureRandom.hex(20)
@@ -14,17 +16,17 @@ end
 
 helpers do
   def set_auth(code, redirect_uri, client_id, me, scope)
-    key = [code, redirect_uri, client_id].join("_")
+    key = [code, redirect_uri, client_id].join('_')
     json = { me: me, scope: scope }.to_json
     REDIS.set(key, json)
-    logger.info "Setting auth key #{key} with json #{json.to_s}"
+    logger.info "Setting auth key #{key} with json #{json}"
     REDIS.expire(key, 60)
   end
 
   def get_auth(code, redirect_uri, client_id)
-    key = [code, redirect_uri, client_id].join("_")
+    key = [code, redirect_uri, client_id].join('_')
     json = REDIS.get(key)
-    logger.info "Getting auth key #{key} and found json #{json.to_s}"
+    logger.info "Getting auth key #{key} and found json #{json}"
     data = JSON.parse(json)
     data
   end
@@ -32,20 +34,20 @@ helpers do
   def set_token(token, me, scope, client_id)
     json = { me: me, scope: scope, client_id: client_id }.to_json
     REDIS.set(token, json)
-    logger.info "Setting token #{token} with json #{json.to_s}"
-    set_token_expiry(token)
+    logger.info "Setting token #{token} with json #{json}"
+    token_expiry(token)
   end
 
   def get_token(token)
     json = REDIS.get(token)
-    logger.info "Getting token #{token} and found json #{json.to_s}"
+    logger.info "Getting token #{token} and found json #{json}"
     data = JSON.parse(json)
     # reset expiry with every use
-    set_token_expiry(token)
+    token_expiry(token)
     data
   end
 
-  def set_token_expiry(token)
+  def token_expiry(token)
     # token lasts for 30 days
     REDIS.expire(token, 2_592_000)
   end
@@ -71,11 +73,11 @@ helpers do
 end
 
 get '/' do
-  "Authorization server"
+  'Authorization server'
 end
 
 get '/auth' do
-  %w(me client_id redirect_uri state).each do |param|
+  %w[me client_id redirect_uri state].each do |param|
     unless params.key?(param) && !params[param].empty?
       halt_error("Authorization request was missing '#{param}' parameter.")
     end
@@ -85,7 +87,7 @@ get '/auth' do
   session[:client_id] = params[:client_id]
   session[:me] = params[:me]
   session[:state] = params[:state]
-  session[:scope] = params[:scope] || ""
+  session[:scope] = params[:scope] || ''
 
   erb :auth
 end
@@ -93,23 +95,19 @@ end
 get '/auth/github/callback' do
   # confirm auth'd github username matches my github username
   username = request.env['omniauth.auth']['info']['nickname']
-  unless username == ENV['GITHUB_USERNAME']
-    halt_error("GitHub username (#{username}) does not match.")
-  end
+  halt_error("GitHub username (#{username}) does not match.") unless username == ENV['GITHUB_USERNAME']
 
-  if session.empty?
-    halt_error("Session has expired during authorization. Please try again.")
-  end
+  halt_error('Session has expired during authorization. Please try again.') if session.empty?
 
   code = SecureRandom.hex(20)
   set_auth(code, session[:redirect_uri], session[:client_id], session[:me],
            session[:scope])
 
   query = URI.encode_www_form({
-    code: code,
-    state: session[:state],
-    me: session[:me]
-  })
+                                code: code,
+                                state: session[:state],
+                                me: session[:me]
+                              })
   url = "#{session[:redirect_uri]}?#{query}"
   session.clear
 
@@ -123,12 +121,12 @@ end
 
 post '/auth' do
   auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
-  data = {me: auth['me']}
+  data = { me: auth['me'] }
   render_data(data)
 end
 
 post '/token' do
-  %w(code me redirect_uri client_id).each do |param|
+  %w[code me redirect_uri client_id].each do |param|
     unless params.key?(param) && !params[param].empty?
       halt_error("Authorization request was missing '#{param}' parameter.")
     end
@@ -137,7 +135,7 @@ post '/token' do
   # verify against auth
   auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
   if auth.nil? || auth.empty? || params[:me] != auth['me']
-    halt_error("Authorization could not be found (or has expired).")
+    halt_error('Authorization could not be found (or has expired).')
   end
 
   token = SecureRandom.hex(50)
@@ -152,15 +150,12 @@ post '/token' do
 end
 
 get '/token' do
-  token = request.env['HTTP_AUTHORIZATION'] || params['access_token'] || ""
-  token.sub!(/^Bearer /,'')
-  if token.empty?
-    halt_error("Access token was not found in request header or body.")
-  end
+  token = request.env['HTTP_AUTHORIZATION'] || params['access_token'] || ''
+  token.sub!(/^Bearer /, '')
+  halt_error('Access token was not found in request header or body.') if token.empty?
 
   data = get_token(token)
-  if data.nil? || data.empty?
-    halt_error("Token not found (or has expired).")
-  end
+  halt_error('Token not found (or has expired).') if data.nil? || data.empty?
+
   render_data(data)
 end

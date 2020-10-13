@@ -1,16 +1,18 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
 ruby '2.6.5'
 
-gem 'sinatra'
-gem 'thin'
-gem 'rack-ssl'
-gem 'redis'
+gem 'foreman'
 gem 'omniauth'
 gem 'omniauth-github'
-gem 'foreman'
+gem 'rack-ssl'
+gem 'redis'
+gem 'sinatra'
+gem 'thin'
 
 group :development do
-  gem 'shotgun'
   gem 'dotenv'
+  gem 'shotgun'
 end
