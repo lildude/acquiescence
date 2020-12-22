@@ -126,7 +126,7 @@ post '/auth' do
 end
 
 post '/token' do
-  %w[code redirect_uri client_id].each do |param|
+  %w[code me redirect_uri client_id].each do |param|
     unless params.key?(param) && !params[param].empty?
       halt_error("Authorization request was missing '#{param}' parameter.")
     end
