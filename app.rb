@@ -12,6 +12,15 @@ configure do
   use OmniAuth::Builder do
     provider :github, ENV['GITHUB_KEY'], ENV['GITHUB_SECRET'], scope: 'user'
   end
+
+  unless settings.production?
+    OmniAuth.config.test_mode = true
+    OmniAuth.config.mock_auth[:github] = OmniAuth::AuthHash.new({
+                                                                  provider: 'github',
+                                                                  uid: ENV['GITHUB_USERNAME'],
+                                                                  info: { nickname: ENV['GITHUB_USERNAME'] }
+                                                                })
+  end
 end
 
 helpers do
