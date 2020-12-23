@@ -23,12 +23,10 @@ helpers do
     REDIS.expire(key, 60)
   end
 
-  def get_auth(code, redirect_uri, client_id)
-    key = [code, redirect_uri, client_id].join('_')
-    json = REDIS.get(key)
-    logger.info "Getting auth key #{key} and found json #{json}"
-    data = JSON.parse(json)
-    data
+  def get_auth(code)
+    json = REDIS.get(code)
+    logger.info "Getting auth key #{code} and found json #{json}"
+    JSON.parse(json)
   end
 
   def set_token(token, me, scope, client_id)
@@ -120,7 +118,7 @@ get '/auth/failure' do
 end
 
 post '/auth' do
-  auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
+  auth = get_auth(params[:code])
   data = { me: auth['me'] }
   render_data(data)
 end
