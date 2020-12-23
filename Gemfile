@@ -14,5 +14,6 @@ gem 'thin'
 
 group :development do
   gem 'dotenv'
+  gem 'rake'
   gem 'shotgun'
 end
