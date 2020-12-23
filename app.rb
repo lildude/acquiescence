@@ -126,15 +126,15 @@ post '/auth' do
 end
 
 post '/token' do
-  %w[code me redirect_uri client_id].each do |param|
+  %w[code redirect_uri client_id].each do |param|
     unless params.key?(param) && !params[param].empty?
       halt_error("Authorization request was missing '#{param}' parameter.")
     end
   end
 
   # verify against auth
-  auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
-  if auth.nil? || auth.empty? || params[:me] != auth['me']
+  auth = get_auth(params[:code])
+  if auth.nil? || auth.empty?
     halt_error('Authorization could not be found (or has expired).')
   end
 
