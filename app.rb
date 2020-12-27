@@ -12,23 +12,29 @@ configure do
   use OmniAuth::Builder do
     provider :github, ENV['GITHUB_KEY'], ENV['GITHUB_SECRET'], scope: 'user'
   end
+
+  unless settings.production?
+    OmniAuth.config.test_mode = true
+    OmniAuth.config.mock_auth[:github] = OmniAuth::AuthHash.new({
+                                                                  provider: 'github',
+                                                                  uid: ENV['GITHUB_USERNAME'],
+                                                                  info: { nickname: ENV['GITHUB_USERNAME'] }
+                                                                })
+  end
 end
 
 helpers do
-  def set_auth(code, redirect_uri, client_id, me, scope)
-    key = [code, redirect_uri, client_id].join('_')
-    json = { me: me, scope: scope }.to_json
-    REDIS.set(key, json)
-    logger.info "Setting auth key #{key} with json #{json}"
-    REDIS.expire(key, 60)
+  def set_auth(code, me, scope, code_challenge, code_challenge_method)
+    json = { me: me, scope: scope, code_challenge: code_challenge, code_challenge_method: code_challenge_method }.to_json
+    REDIS.set(code, json)
+    logger.info "Setting auth key #{code} with json #{json}"
+    REDIS.expire(code, 60)
   end
 
-  def get_auth(code, redirect_uri, client_id)
-    key = [code, redirect_uri, client_id].join('_')
-    json = REDIS.get(key)
-    logger.info "Getting auth key #{key} and found json #{json}"
-    data = JSON.parse(json)
-    data
+  def get_auth(code)
+    json = REDIS.get(code)
+    logger.info "Getting auth key #{code} and found json #{json}"
+    JSON.parse(json)
   end
 
   def set_token(token, me, scope, client_id)
@@ -67,6 +73,10 @@ helpers do
     halt message
   end
 
+  def verify_code_verifier(verifier, challenge)
+    Base64.urlsafe_encode64(Digest::SHA256.digest(verifier)).gsub(/=/, '') == challenge
+  end
+
   def h(text)
     Rack::Utils.escape_html(text)
   end
@@ -88,7 +98,10 @@ get '/auth' do
   session[:me] = params[:me]
   session[:state] = params[:state]
   session[:scope] = params[:scope] || ''
+  session[:code_challenge] = params[:code_challenge] || ''
+  session[:code_challenge_method] = params[:code_challenge_method] || ''
 
+  # TODO: Get the microformats from the client and show this on the auth page - https://indieauth.spec.indieweb.org/#client-information-discovery
   erb :auth
 end
 
@@ -100,8 +113,7 @@ get '/auth/github/callback' do
   halt_error('Session has expired during authorization. Please try again.') if session.empty?
 
   code = SecureRandom.hex(20)
-  set_auth(code, session[:redirect_uri], session[:client_id], session[:me],
-           session[:scope])
+  set_auth(code, session[:me], session[:scope], session[:code_challenge], session[:code_challenge_method])
 
   query = URI.encode_www_form({
                                 code: code,
@@ -120,22 +132,29 @@ get '/auth/failure' do
 end
 
 post '/auth' do
-  auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
+  auth = get_auth(params[:code])
   data = { me: auth['me'] }
   render_data(data)
 end
 
 post '/token' do
-  %w[code me redirect_uri client_id].each do |param|
+  %w[code redirect_uri client_id].each do |param|
     unless params.key?(param) && !params[param].empty?
       halt_error("Authorization request was missing '#{param}' parameter.")
     end
   end
 
   # verify against auth
-  auth = get_auth(params[:code], params[:redirect_uri], params[:client_id])
-  if auth.nil? || auth.empty? || params[:me] != auth['me']
+  auth = get_auth(params[:code])
+  if auth.nil? || auth.empty?
     halt_error('Authorization could not be found (or has expired).')
+  end
+
+  # Verify the code_challenge
+  if params[:code_verifier] &&
+     auth['code_challenge'] != '' &&
+     !verify_code_verifier(params[:code_verifier], auth['code_challenge'])
+    halt_error('Authorization request code verification failed')
   end
 
   token = SecureRandom.hex(50)
